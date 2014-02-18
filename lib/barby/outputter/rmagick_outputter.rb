@@ -9,10 +9,27 @@ module Barby
   #Registers the to_png, to_gif, to_jpg and to_image methods
   class RmagickOutputter < Outputter
   
-    register :to_png, :to_gif, :to_jpg, :to_image
+    register :to_png, :to_gif, :to_jpg, :to_image, :to_image_with_data
 
     attr_accessor :height, :xdim, :ydim, :margin
 
+    def to_image_with_data
+      #Credits: original post by Hamza Khan-Cheema
+      # http://hamza.khan-cheema.com/show/34-Generate-a-Barcode-in-Ruby-with-Barby-and-a-small-extension
+      
+      #Make canvas  bigger
+      canvas = Magick::ImageList.new
+      canvas.new_image(full_width , full_height + 10)
+      canvas << to_image
+      canvas = canvas.flatten_images
+      #Make the text
+      text = Magick::Draw.new
+      text.font_family = 'helvetica'
+      text.pointsize = 14
+      text.gravity = Magick::SouthGravity
+      text.annotate(canvas , 0,0,0,0, barcode.data)
+      canvas
+    end
 
     #Returns a string containing a PNG image
     def to_png(*a)
