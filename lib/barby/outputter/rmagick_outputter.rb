@@ -1,5 +1,4 @@
 require 'barby/outputter'
-require 'RMagick'
 
 module Barby
 
@@ -9,9 +8,9 @@ module Barby
   #Registers the to_png, to_gif, to_jpg and to_image methods
   class RmagickOutputter < Outputter
   
-    register :to_png, :to_gif, :to_jpg, :to_image, :to_image_with_data
+    register :to_png, :to_gif, :to_jpg, :to_image
 
-    attr_accessor :height, :xdim, :ydim, :margin
+    attr_accessor :height, :xdim, :ydim, :margin, :caption
 
     #Returns a string containing a PNG image
     def to_png(*a)
@@ -39,28 +38,10 @@ module Barby
       blob
     end
 
-    def to_image_with_data(opts={})
-      #Credits: original post by Hamza Khan-Cheema
-      # http://hamza.khan-cheema.com/show/34-Generate-a-Barcode-in-Ruby-with-Barby-and-a-small-extension
-      
-      #Make canvas  bigger
-      canvas = Magick::ImageList.new
-      canvas.new_image(full_width , full_height + 10)
-      canvas << to_image(opts)
-      canvas = canvas.flatten_images
-      #Make the text
-      text = Magick::Draw.new
-      text.font_family = 'helvetica'
-      text.pointsize = 14
-      text.gravity = Magick::SouthGravity
-      text.annotate(canvas , 0,0,0,0, barcode.data)
-      canvas
-    end
-
     #Returns an instance of Magick::Image
     def to_image(opts={})
       with_options opts do
-        canvas = Magick::Image.new(full_width, full_height)
+        canvas = Magick::Image.new(full_width, caption == true ? full_height + 20 : full_height)
         bars = Magick::Draw.new
 
         x = margin
@@ -85,13 +66,28 @@ module Barby
             x += xdim
           end
         end
-
+        
+        if caption
+          #TODO: might need to add more options of where to add the annotation, font, pointsize, etc
+          text = Magick::Draw.new
+          text.font_family = 'Helvetica'
+          text.pointsize = 30
+          text.fill = "black"
+          text.stroke = "none"
+          text.gravity = Magick::SouthGravity
+          text.annotate(canvas,0,0,0,0, barcode.data)
+        end
+        
         bars.draw(canvas)
 
         canvas
       end
     end
 
+    #Switch to toggle if the code should be added to the image; defaults to false
+    def caption
+      @caption || false
+    end
 
     #The height of the barcode in px
     #For 2D barcodes this is the number of "lines" * ydim
@@ -127,7 +123,7 @@ module Barby
     #The full width of the image. This is the width of the
     #barcode + the left and right margin
     def full_width
-      width + (margin * 2)
+      width + (margin * 2) 
     end
 
     #The height of the image. This is the height of the
