@@ -1,6 +1,7 @@
 require 'barby/outputter'
 require 'chunky_png'
-require 'RMagick'
+require 'MiniMagick'
+# require 'RMagick'
 
 module Barby
 
